@@ -1,0 +1,1 @@
+C:\Users\pavel\AppData\Local\Programs\pgAdmin 4\runtime\pg_dump.exe --file "C:\\Users\\pavel\\BSApp\\PostgreSQL\\BSApp\\main" --host "109.71.245.217" --port "5432" --username "postgres" --no-password --format=p --encoding "UTF8" --schema-only --verbose --schema "main" --schema "main" "BSApp"
