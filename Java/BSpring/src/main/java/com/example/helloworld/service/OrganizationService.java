@@ -6,8 +6,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class OrganizationService {
@@ -19,40 +19,39 @@ public class OrganizationService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public String getLatestDebtByAccount(String accountNumber) {
+    public Map<String, Object> getAccountInfo(String accountNumber) {
         try {
             logger.info("Используемая схема: {}", ORGANIZATION_SCHEMA);
             // 1. Находим последнюю таблицу в схеме
             String latestTable = findLatestTable();
             if (latestTable == null) {
-                return "Не найдено подходящих таблиц в схеме " + ORGANIZATION_SCHEMA;
+                throw new RuntimeException("Не найдено подходящих таблиц в схеме " + ORGANIZATION_SCHEMA);
             }
 
             logger.info("Используем таблицу: {}", latestTable);
 
             // 2. Получаем структуру таблицы для проверки
             List<String> columns = getTableColumns(latestTable);
-            if (!columns.contains("debt") || !columns.contains("account_number")) {
-                return "Таблица " + latestTable + " не содержит нужных колонок";
+            if (!columns.contains("account_number")) {
+                throw new RuntimeException("Таблица " + latestTable + " не содержит колонки account_number");
             }
 
             // 3. Выполняем запрос к последней таблице
             String sql = String.format(
-                    "SELECT debt FROM \"%s\".\"%s\" WHERE account_number = ?",
+                    "SELECT account_number, full_name, address, period_year, period_month, meter_reading, debt " +
+                            "FROM \"%s\".\"%s\" WHERE account_number = ?",
                     ORGANIZATION_SCHEMA,
                     latestTable
             );
 
             logger.info("Выполняем запрос: {}", sql);
-            BigDecimal debt = jdbcTemplate.queryForObject(sql, BigDecimal.class, accountNumber);
-
-            return String.format("Задолженность по счету %s: %s", accountNumber, debt);
+            return jdbcTemplate.queryForMap(sql, accountNumber);
 
         } catch (EmptyResultDataAccessException e) {
-            return "Счет " + accountNumber + " не найден";
+            throw new RuntimeException("Счет " + accountNumber + " не найден");
         } catch (Exception e) {
             logger.error("Ошибка при выполнении запроса", e);
-            return "Ошибка сервера: " + e.getMessage();
+            throw new RuntimeException("Ошибка сервера: " + e.getMessage());
         }
     }
 

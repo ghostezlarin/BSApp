@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/organizations")
 @Tag(name = "Organization API")
@@ -19,13 +21,17 @@ public class OrganizationController {
         this.service = service;
     }
 
-    @Operation(summary = "Получить задолженность по счёту")
-    @GetMapping("/debt")
-    public ResponseEntity<?> getDebt(
+    @Operation(summary = "Получить информацию по счёту")
+    @GetMapping("/account")
+    public ResponseEntity<?> getAccountInfo(
             @Parameter(description = "Номер счёта", required = true)
             @RequestParam String account) {
 
-        String result = service.getLatestDebtByAccount(account);
-        return ResponseEntity.ok(result);
+        try {
+            Map<String, Object> accountInfo = service.getAccountInfo(account);
+            return ResponseEntity.ok(accountInfo);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
